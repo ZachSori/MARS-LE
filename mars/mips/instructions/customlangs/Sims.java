@@ -11,6 +11,30 @@
 
 
 public class Sims extends CustomAssembly{
+    public static int balance, debt, income, ir, lir = 0;
+    public static int year = 0;
+
+    public void reset(){
+        balance = 0;
+        debt = 0;
+        income = 0;
+        ir = 0;
+        lir = 0;
+        year = 0;
+    }
+    public void pass(){
+        year++;
+        balance += income;
+        if(lir>0){
+            debt += (debt * lir) / 100;
+        }
+        if(ir>0){
+            balance += (balance * ir) / 100;
+        }
+    }
+    public String getStats(){
+        return "Year: " + year + "\nBalance: " + balance + "\nDebt: " + debt + "\nIncome: " + income + "\nInterest Rate: " + ir + "%\nLoan Interest Rate: " + lir + "%";
+    }
     @Override
     public String getName(){
         return "Sims Assembly";
@@ -46,8 +70,9 @@ public class Sims extends CustomAssembly{
                             "arithmetic overflow",Exceptions.ARITHMETIC_OVERFLOW_EXCEPTION);
                      }
                      RegisterFile.updateRegister(operands[0], result);
+                     pass();
+
                      // Print "hello" to the MARS I/O emulator (Messages pane or stdout)
-                     mars.util.SystemIO.printString("hello\n");
                      
                   }
                }));
@@ -72,6 +97,7 @@ public class Sims extends CustomAssembly{
                             "arithmetic overflow",Exceptions.ARITHMETIC_OVERFLOW_EXCEPTION);
                      }
                      RegisterFile.updateRegister(operands[0], sum);
+                     pass();
                   }
                }));
 
@@ -95,6 +121,7 @@ public class Sims extends CustomAssembly{
                             "arithmetic overflow",Exceptions.ARITHMETIC_OVERFLOW_EXCEPTION);
                      }
                      RegisterFile.updateRegister(operands[0], dif);
+                     pass();
                   }
                }));
                instructionList.add(
@@ -114,6 +141,7 @@ public class Sims extends CustomAssembly{
                   // Register 33 is HIGH and 34 is LOW.  Not required by MIPS; SPIM does it.
                      RegisterFile.updateRegister(33, (int) (product >> 32));
                      RegisterFile.updateRegister(34, (int) ((product << 32) >> 32));
+                     pass();
                   }
                }));
                
@@ -142,6 +170,7 @@ public class Sims extends CustomAssembly{
                      RegisterFile.updateRegister(34,
                         RegisterFile.getValue(operands[0])
                         / RegisterFile.getValue(operands[1]));
+                        pass();
                   }
                 }));
 
@@ -166,6 +195,7 @@ public class Sims extends CustomAssembly{
                         {
                            throw new ProcessingException(statement, e);
                         }
+                        pass();
                   }
                }));
 
@@ -189,6 +219,7 @@ public class Sims extends CustomAssembly{
                         {
                            throw new ProcessingException(statement, e);
                         }
+                        pass();
                   }
                }));
 
@@ -205,6 +236,7 @@ public class Sims extends CustomAssembly{
                      RegisterFile.updateRegister(operands[0],
                         RegisterFile.getValue(operands[1])
                         | RegisterFile.getValue(operands[2]));
+                        pass();
                   }
                }));
 
@@ -221,6 +253,7 @@ public class Sims extends CustomAssembly{
                      RegisterFile.updateRegister(operands[0],
                         RegisterFile.getValue(operands[1])
                         ^ RegisterFile.getValue(operands[2]));
+                        pass();
                   }
                }));
 
@@ -239,6 +272,34 @@ public class Sims extends CustomAssembly{
                         < RegisterFile.getValue(operands[2]))
                                 ? 1
                                 : 0);
+                                pass();
+                  }
+               }));
+               instructionList.add(
+                new BasicInstruction("Status",
+                "Status Report : Print current financial status to the MARS I/O emulator (Messages pane or stdout)",
+            	 BasicInstructionFormat.R_FORMAT,
+                "000000 sssss ttttt fffff 00000 101010",
+                new SimulationCode()
+               {
+                   public void simulate(ProgramStatement statement) throws ProcessingException
+                  {
+                    mars.util.SystemIO.printString(getStats() + "\n");
+
+                  }
+               }));
+               instructionList.add(
+                new BasicInstruction("Income $t0",
+                "Sets Income : Set income to register value",
+            	 BasicInstructionFormat.R_FORMAT,
+                "000000 sssss ttttt fffff 00000 101010",
+                new SimulationCode()
+               {
+                   public void simulate(ProgramStatement statement) throws ProcessingException
+                  {
+                    int [] operands = statement.getOperands();
+                    income = RegisterFile.getValue(operands[0]);
+                    pass();
                   }
                }));
 
