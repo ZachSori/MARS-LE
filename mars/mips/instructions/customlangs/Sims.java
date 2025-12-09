@@ -8,6 +8,7 @@
     import java.io.*;
     import mars.mips.instructions.*;
     import java.util.Random;
+    
 
 
 public class Sims extends CustomAssembly{
@@ -22,7 +23,10 @@ public class Sims extends CustomAssembly{
         lir = 0;
         year = 0;
     }
-    public void pass(){
+    public void pass(int lineNum){
+        if(lineNum==1){
+            reset();
+        }
         year++;
         balance += income;
         if(lir>0){
@@ -50,7 +54,7 @@ public class Sims extends CustomAssembly{
 
         // put (same as addi)
       instructionList.add(
-                new BasicInstruction("incrament $t0,$t1,12",
+                new BasicInstruction("incrament $t0,$t1,-65535",
             	 "Assign value to register: set $t0 to ($t1 plus signed 16-bit immediate)",
                 BasicInstructionFormat.I_FORMAT,
                 "111111 sssss fffff tttttttttttttttt",
@@ -70,9 +74,9 @@ public class Sims extends CustomAssembly{
                             "arithmetic overflow",Exceptions.ARITHMETIC_OVERFLOW_EXCEPTION);
                      }
                      RegisterFile.updateRegister(operands[0], result);
-                     pass();
+                     int line = statement.getSourceLine();
+                     pass(line);
 
-                     // Print "hello" to the MARS I/O emulator (Messages pane or stdout)
                      
                   }
                }));
@@ -97,7 +101,8 @@ public class Sims extends CustomAssembly{
                             "arithmetic overflow",Exceptions.ARITHMETIC_OVERFLOW_EXCEPTION);
                      }
                      RegisterFile.updateRegister(operands[0], sum);
-                     pass();
+                     int line = statement.getSourceLine();
+                     pass(line);
                   }
                }));
 
@@ -121,7 +126,8 @@ public class Sims extends CustomAssembly{
                             "arithmetic overflow",Exceptions.ARITHMETIC_OVERFLOW_EXCEPTION);
                      }
                      RegisterFile.updateRegister(operands[0], dif);
-                     pass();
+                     int line = statement.getSourceLine();
+                     pass(line);
                   }
                }));
                instructionList.add(
@@ -141,7 +147,8 @@ public class Sims extends CustomAssembly{
                   // Register 33 is HIGH and 34 is LOW.  Not required by MIPS; SPIM does it.
                      RegisterFile.updateRegister(33, (int) (product >> 32));
                      RegisterFile.updateRegister(34, (int) ((product << 32) >> 32));
-                     pass();
+                     int line = statement.getSourceLine();
+                     pass(line);
                   }
                }));
                
@@ -170,7 +177,8 @@ public class Sims extends CustomAssembly{
                      RegisterFile.updateRegister(34,
                         RegisterFile.getValue(operands[0])
                         / RegisterFile.getValue(operands[1]));
-                        pass();
+                        int line = statement.getSourceLine();
+                        pass(line);
                   }
                 }));
 
@@ -195,7 +203,8 @@ public class Sims extends CustomAssembly{
                         {
                            throw new ProcessingException(statement, e);
                         }
-                        pass();
+                        int line = statement.getSourceLine();
+                        pass(line);
                   }
                }));
 
@@ -219,7 +228,8 @@ public class Sims extends CustomAssembly{
                         {
                            throw new ProcessingException(statement, e);
                         }
-                        pass();
+                        int line = statement.getSourceLine();
+                        pass(line);
                   }
                }));
 
@@ -236,7 +246,8 @@ public class Sims extends CustomAssembly{
                      RegisterFile.updateRegister(operands[0],
                         RegisterFile.getValue(operands[1])
                         | RegisterFile.getValue(operands[2]));
-                        pass();
+                        int line = statement.getSourceLine();
+                        pass(line);
                   }
                }));
 
@@ -253,7 +264,8 @@ public class Sims extends CustomAssembly{
                      RegisterFile.updateRegister(operands[0],
                         RegisterFile.getValue(operands[1])
                         ^ RegisterFile.getValue(operands[2]));
-                        pass();
+                        int line = statement.getSourceLine();
+                        pass(line);
                   }
                }));
 
@@ -272,7 +284,35 @@ public class Sims extends CustomAssembly{
                         < RegisterFile.getValue(operands[2]))
                                 ? 1
                                 : 0);
-                                pass();
+                                int line = statement.getSourceLine();
+                                pass(line);
+                  }
+               }));
+               //-------------------------------Unique Instructions--------------------------------//
+               instructionList.add(
+                new BasicInstruction("Avg $t1,$t2,$t3",
+            	 "Addition with overflow : set $t1 to ($t2 plus $t3)",
+                BasicInstructionFormat.R_FORMAT,
+                "000000 sssss ttttt fffff 00000 100000",
+                new SimulationCode()
+               {
+                   public void simulate(ProgramStatement statement) throws ProcessingException
+                  {
+                     int[] operands = statement.getOperands();
+                     int add1 = RegisterFile.getValue(operands[1]);
+                     int add2 = RegisterFile.getValue(operands[2]);
+                     int sum = add1 + add2;
+                  // overflow on A+B detected when A and B have same sign and A+B has other sign.
+                     if ((add1 >= 0 && add2 >= 0 && sum < 0)
+                        || (add1 < 0 && add2 < 0 && sum >= 0))
+                     {
+                        throw new ProcessingException(statement,
+                            "arithmetic overflow",Exceptions.ARITHMETIC_OVERFLOW_EXCEPTION);
+                     }
+                     int average = (int)(((long)add1 + (long)add2) / 2L);
+                     RegisterFile.updateRegister(operands[0], average);
+                     int line = statement.getSourceLine();
+                     pass(line);
                   }
                }));
                instructionList.add(
@@ -285,6 +325,8 @@ public class Sims extends CustomAssembly{
                    public void simulate(ProgramStatement statement) throws ProcessingException
                   {
                     mars.util.SystemIO.printString(getStats() + "\n");
+                    int line = statement.getSourceLine();
+                    pass(line);
 
                   }
                }));
@@ -299,7 +341,74 @@ public class Sims extends CustomAssembly{
                   {
                     int [] operands = statement.getOperands();
                     income = RegisterFile.getValue(operands[0]);
-                    pass();
+                    int line = statement.getSourceLine();
+                    pass(line);
+                  }
+               }));
+               instructionList.add(
+                new BasicInstruction("Loan $t0",
+                "Sets Debt: Set debt to register value, LIR is also applied depending on debt size",
+            	 BasicInstructionFormat.R_FORMAT,
+                "000000 sssss ttttt fffff 00000 101010",
+                new SimulationCode()
+               {
+                   public void simulate(ProgramStatement statement) throws ProcessingException
+                  {
+                    int [] operands = statement.getOperands();
+                    debt += RegisterFile.getValue(operands[0]);
+                    if(debt>0 && lir==0) lir = 5;
+                    else if(debt==0) lir = 0;
+                    else if(debt>1000) lir = 10;
+                    else if(debt>5000) lir = 15;
+                    else if(debt>10000) lir = 25;
+                    else if(debt>50000) lir = 50;
+                    int line = statement.getSourceLine();
+                    pass(line);
+                  }
+               }));
+               instructionList.add(
+                new BasicInstruction("IR $t0",
+                "Sets Interest Rate : Set interest rate to register value",
+            	 BasicInstructionFormat.R_FORMAT,
+                "000000 sssss ttttt fffff 00000 101010",
+                new SimulationCode()
+               {
+                   public void simulate(ProgramStatement statement) throws ProcessingException
+                  {
+                    int [] operands = statement.getOperands();
+                    ir = RegisterFile.getValue(operands[0]);
+                    int line = statement.getSourceLine();
+                    pass(line);
+                  }
+               }));
+               instructionList.add(
+                new BasicInstruction("LIR $t0",
+                "Sets Interest Rate : Set loan interest rate to register value",
+            	 BasicInstructionFormat.R_FORMAT,
+                "000000 sssss ttttt fffff 00000 101010",
+                new SimulationCode()
+               {
+                   public void simulate(ProgramStatement statement) throws ProcessingException
+                  {
+                    int [] operands = statement.getOperands();
+                    lir = RegisterFile.getValue(operands[0]);
+                    int line = statement.getSourceLine();
+                    pass(line);
+                  }
+               }));
+               instructionList.add(
+                new BasicInstruction("Savings $t0",
+                "Increase Debt : Increase debt by register value",
+            	 BasicInstructionFormat.R_FORMAT,
+                "000000 sssss ttttt fffff 00000 101010",
+                new SimulationCode()
+               {
+                   public void simulate(ProgramStatement statement) throws ProcessingException
+                  {
+                    int [] operands = statement.getOperands();
+                    balance += RegisterFile.getValue(operands[0]);
+                    int line = statement.getSourceLine();
+                    pass(line);
                   }
                }));
 
