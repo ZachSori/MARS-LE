@@ -300,7 +300,9 @@ public class Sims extends CustomAssembly{
                      int[] operands = statement.getOperands();
                      Globals.instructionSet.processJump(
                         ((RegisterFile.getProgramCounter() & 0xF0000000)
-                                | (operands[0] << 2)));            
+                                | (operands[0] << 2)));
+                    int line = statement.getSourceLine();
+                    pass(line);            
                   }
                }));
                instructionList.add(
@@ -317,6 +319,8 @@ public class Sims extends CustomAssembly{
                      {
                         Globals.instructionSet.processBranch(operands[1]);
                      }
+                    int line = statement.getSourceLine();
+                    pass(line);
                   }
                }));
                instructionList.add(
@@ -333,6 +337,8 @@ public class Sims extends CustomAssembly{
                      {
                         Globals.instructionSet.processBranch(operands[1]);
                      }
+                     int line = statement.getSourceLine();
+                     pass(line);
                   }
                }));
                //-------------------------------Unique Instructions--------------------------------//
@@ -372,8 +378,8 @@ public class Sims extends CustomAssembly{
                    public void simulate(ProgramStatement statement) throws ProcessingException
                   {
                     mars.util.SystemIO.printString(getStats() + "\n");
-                    int line = statement.getSourceLine();
-                    pass(line);
+                    // int line = statement.getSourceLine();
+                    // pass(line);
 
                   }
                }));
@@ -516,8 +522,6 @@ public class Sims extends CustomAssembly{
                   {
                     int [] operands = statement.getOperands();
                     RegisterFile.updateRegister(operands[0], balance);
-                    int line = statement.getSourceLine();
-                    pass(line);
                   }
                }));
                instructionList.add(
@@ -531,8 +535,6 @@ public class Sims extends CustomAssembly{
                   {
                     int [] operands = statement.getOperands();
                     RegisterFile.updateRegister(operands[0], debt);
-                    int line = statement.getSourceLine();
-                    pass(line);
                   }
                }));
 
