@@ -288,6 +288,53 @@ public class Sims extends CustomAssembly{
                                 pass(line);
                   }
                }));
+               instructionList.add(
+                new BasicInstruction("j target", 
+            	 "Jump unconditionally : Jump to statement at target address",
+            	 BasicInstructionFormat.J_FORMAT,
+                "000010 ffffffffffffffffffffffffff",
+                new SimulationCode()
+               {
+                   public void simulate(ProgramStatement statement) throws ProcessingException
+                  {
+                     int[] operands = statement.getOperands();
+                     Globals.instructionSet.processJump(
+                        ((RegisterFile.getProgramCounter() & 0xF0000000)
+                                | (operands[0] << 2)));            
+                  }
+               }));
+               instructionList.add(
+                new BasicInstruction("bltz $t1,label",
+                "Branch if less than zero : Branch to statement at label's address if $t1 is less than zero",
+            	 BasicInstructionFormat.I_BRANCH_FORMAT,
+                "000001 fffff 00000 ssssssssssssssss",
+                new SimulationCode()
+               {
+                   public void simulate(ProgramStatement statement) throws ProcessingException
+                  {
+                     int[] operands = statement.getOperands();
+                     if (RegisterFile.getValue(operands[0]) < 0)
+                     {
+                        Globals.instructionSet.processBranch(operands[1]);
+                     }
+                  }
+               }));
+               instructionList.add(
+                new BasicInstruction("bgtz $t1,label",
+                "Branch if greater than zero : Branch to statement at label's address if $t1 is greater than zero",
+            	 BasicInstructionFormat.I_BRANCH_FORMAT,
+                "000111 fffff 00000 ssssssssssssssss",
+                new SimulationCode()
+               {
+                   public void simulate(ProgramStatement statement) throws ProcessingException
+                  {
+                     int[] operands = statement.getOperands();
+                     if (RegisterFile.getValue(operands[0]) > 0)
+                     {
+                        Globals.instructionSet.processBranch(operands[1]);
+                     }
+                  }
+               }));
                //-------------------------------Unique Instructions--------------------------------//
                instructionList.add(
                 new BasicInstruction("Avg $t1,$t2,$t3",
@@ -398,7 +445,7 @@ public class Sims extends CustomAssembly{
                }));
                instructionList.add(
                 new BasicInstruction("Savings $t0",
-                "Increase Debt : Increase debt by register value",
+                "Increase Balance: Increase balance by register value",
             	 BasicInstructionFormat.R_FORMAT,
                 "000000 sssss ttttt fffff 00000 101010",
                 new SimulationCode()
@@ -407,6 +454,83 @@ public class Sims extends CustomAssembly{
                   {
                     int [] operands = statement.getOperands();
                     balance += RegisterFile.getValue(operands[0]);
+                    int line = statement.getSourceLine();
+                    pass(line);
+                  }
+               }));
+               instructionList.add(
+                new BasicInstruction("NL",
+                "New Life: Resets the progress you have and start from 0 again",
+            	 BasicInstructionFormat.R_FORMAT,
+                "000000 sssss ttttt fffff 00000 101010",
+                new SimulationCode()
+               {
+                   public void simulate(ProgramStatement statement) throws ProcessingException
+                  {
+                    mars.util.SystemIO.printString("Your life has been fufilled and you have reached Agartha");
+                    mars.util.SystemIO.printString("\nYou lived for " + year + " years.");
+                    if(debt==0){
+                        mars.util.SystemIO.printString("\nYou passed debt-free with a net worth of " + balance + ".");
+                    }
+                    else if(balance>=debt){
+                        mars.util.SystemIO.printString("\nYou passed a wealthy person with a net worth of " + balance + " and an unpaid debt of " + debt + ".");
+                    } else {
+                        mars.util.SystemIO.printString("\nYou died in poverty with a balance of " + balance + " and a debt of " + debt + ".");
+                    }
+                    reset();
+                  }
+               }));
+               instructionList.add(
+                new BasicInstruction("Payoff",
+                "New Life: Resets the progress you have and start from 0 again",
+            	 BasicInstructionFormat.R_FORMAT,
+                "000000 sssss ttttt fffff 00000 101010",
+                new SimulationCode()
+               {
+                   public void simulate(ProgramStatement statement) throws ProcessingException
+                  {
+                    if(balance>=debt){
+                        balance -= debt;
+                        debt = 0;
+                        lir = 0;
+                        mars.util.SystemIO.printString("You are debt-free!\nYou have a remaining balance of " + balance + ".\n");
+                    } else {
+                        debt -= balance;
+                        mars.util.SystemIO.printString("You have paid off " + balance + " of your debt.");
+                        mars.util.SystemIO.printString("\nYou still owe " + debt + ".");
+                        balance = 0;
+                    }
+                    int line = statement.getSourceLine();
+                    pass(line);
+                  }
+               }));
+               
+               instructionList.add(
+                new BasicInstruction("BalTo $t0",
+                "Sets the register to a unique value (Balance, Debt, Income, IR, LIR, Year)",
+            	 BasicInstructionFormat.R_FORMAT,
+                "000000 sssss ttttt fffff 00000 101010",
+                new SimulationCode()
+               {
+                   public void simulate(ProgramStatement statement) throws ProcessingException
+                  {
+                    int [] operands = statement.getOperands();
+                    RegisterFile.updateRegister(operands[0], balance);
+                    int line = statement.getSourceLine();
+                    pass(line);
+                  }
+               }));
+               instructionList.add(
+                new BasicInstruction("DebtTo $t0",
+                "Sets the register to a unique value (Balance, Debt, Income, IR, LIR, Year)",
+            	 BasicInstructionFormat.R_FORMAT,
+                "000000 sssss ttttt fffff 00000 101010",
+                new SimulationCode()
+               {
+                   public void simulate(ProgramStatement statement) throws ProcessingException
+                  {
+                    int [] operands = statement.getOperands();
+                    RegisterFile.updateRegister(operands[0], debt);
                     int line = statement.getSourceLine();
                     pass(line);
                   }

@@ -1,9 +1,21 @@
-incrament $t0, $t0, 512
-Income $t0
-incrament $t3, $t3, 2048
-Loan $t3
+incrament $t0, $t0, 512 
 incrament $t1, $t1, 1
+incrament $t2, $t2, 2048
+
+incrament $t3, $t3, 1
+incrament $t4, $t4, 10
+
+Income $t0
 IR $t1
-Avg $t2, $t1, $t0
-Savings $t2
-Status
+Loan $t2
+
+Loop:
+if< $t5, $t4, $t3
+bgtz $t5, Exit
+
+incrament $t3, $t3, 1
+j Loop
+Exit:
+Payoff
+BalTo $t9
+NL
