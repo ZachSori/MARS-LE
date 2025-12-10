@@ -153,32 +153,23 @@ public class Sims extends CustomAssembly{
                }));
                
                instructionList.add(
-                new BasicInstruction("quot $t1,$t2",
-            	 "Division with overflow : Divide $t1 by $t2 then set LO to quotient and HI to remainder (use mfhi to access HI, mflo to access LO)",
+                new BasicInstruction("quot $t1,$t2, $t3",
+            	 "Divide $t2 by $t3 and store quotient directly in $t1",
                 BasicInstructionFormat.R_FORMAT,
-                "000000 fffff sssss 00000 00000 011010",
+                "000000 fffff sssss ttttt 00000 011010",
                 new SimulationCode()
                 {
                    public void simulate(ProgramStatement statement) throws ProcessingException
                   {
-                     int[] operands = statement.getOperands();
-                     if (RegisterFile.getValue(operands[1]) == 0)
-                     {
-                     // Note: no exceptions and undefined results for zero div
-                     // COD3 Appendix A says "with overflow" but MIPS 32 instruction set
-                     // specification says "no arithmetic exception under any circumstances".
-                        return;
-                     }
-                  
-                  // Register 33 is HIGH and 34 is LOW
-                     RegisterFile.updateRegister(33,
-                        RegisterFile.getValue(operands[0])
-                        % RegisterFile.getValue(operands[1]));
-                     RegisterFile.updateRegister(34,
-                        RegisterFile.getValue(operands[0])
-                        / RegisterFile.getValue(operands[1]));
-                        int line = statement.getSourceLine();
-                        pass(line);
+                    int[] operands = statement.getOperands();
+                    int rs = RegisterFile.getValue(operands[1]);
+                    int rt = RegisterFile.getValue(operands[2]);
+                    int rd = operands[0];
+                    if (rt == 0) return;
+                    int quotient = rs / rt;
+                    RegisterFile.updateRegister(rd, quotient);
+                    int line = statement.getSourceLine();
+                    pass(line);
                   }
                 }));
 
@@ -209,7 +200,8 @@ public class Sims extends CustomAssembly{
                }));
 
                instructionList.add(
-                new BasicInstruction("lw $t1,-100($t2)",
+                //new BasicInstruction("lw $t1,-100($t2)",
+                new BasicInstruction("Load $t1 in $t2 + 100",
             	 "Load word : Set $t1 to contents of effective memory word address",
                 BasicInstructionFormat.I_FORMAT,
                 "100011 ttttt fffff ssssssssssssssss",
@@ -234,7 +226,7 @@ public class Sims extends CustomAssembly{
                }));
 
                instructionList.add(
-                new BasicInstruction("67 $t1,$t2,$t3",
+                new BasicInstruction("eor $t1,$t2,$t3",
             	 "Bitwise OR : Set $t1 to bitwise OR of $t2 and $t3",
                 BasicInstructionFormat.R_FORMAT,
                 "000000 sssss ttttt fffff 00000 100101",
@@ -455,6 +447,7 @@ public class Sims extends CustomAssembly{
                   {
                     int [] operands = statement.getOperands();
                     balance += RegisterFile.getValue(operands[0]);
+                    mars.util.SystemIO.printString("New Balance: " + RegisterFile.getValue(operands[0]) + " doubloons.\n\n");
                     int line = statement.getSourceLine();
                     pass(line);
                   }
@@ -468,18 +461,18 @@ public class Sims extends CustomAssembly{
                {
                    public void simulate(ProgramStatement statement) throws ProcessingException
                   {
-                    mars.util.SystemIO.printString("Your life has been fufilled and you have reached Agartha");
-                    mars.util.SystemIO.printString("\nYou lived for " + year + " years.");
+                    mars.util.SystemIO.printString("Your life has been fufilled and you have reached Agartha\n");
+                    mars.util.SystemIO.printString("You lived for " + year + " years.\n");
                     if(debt==0){
-                        mars.util.SystemIO.printString("\nYou passed, debt-free with a net worth of " + balance + ".");
+                        mars.util.SystemIO.printString("You passed, debt-free with a net worth of " + balance + ".\n\n");
                     }
                     else if(balance>=debt){
-                        mars.util.SystemIO.printString("\nYou passed, a wealthy person with a net worth of " + balance + " and an unpaid debt of " + debt + ".");
+                        mars.util.SystemIO.printString("You passed, a wealthy person with a net worth of " + balance + " and an unpaid debt of " + debt + ".\n\n");
                     } else if(balance<debt && balance>3) {
-                        mars.util.SystemIO.printString("\nYou passed away with a debt of "+ debt + ", but atleast you can afford a white monster with your " + balance + " doubloons.");
+                        mars.util.SystemIO.printString("You passed away with a debt of "+ debt + ", but atleast you can afford a white monster with your " + balance + " doubloons.\n\n");
                     }
                     else {
-                        mars.util.SystemIO.printString("\nYou poor poor soul can be summed up to " + debt + " doubloons of debt.\n\n");
+                        mars.util.SystemIO.printString("You poor poor soul can be summed up to " + debt + " doubloons of debt.\n\n");
                     }
                     reset();
                   }
@@ -500,10 +493,11 @@ public class Sims extends CustomAssembly{
                         mars.util.SystemIO.printString("You are debt-free!\nYou have a remaining balance of " + balance + ".\n");
                     } else {
                         debt -= balance;
-                        mars.util.SystemIO.printString("You have paid off " + balance + " of your debt.");
-                        mars.util.SystemIO.printString("\nYou still owe " + debt + ".");
+                        mars.util.SystemIO.printString("You have paid off " + balance + " of your debt.\n");
+                        mars.util.SystemIO.printString("You still owe " + debt + ".\n");
                         balance = 0;
                     }
+                    mars.util.SystemIO.printString("\n");
                     int line = statement.getSourceLine();
                     pass(line);
                   }
