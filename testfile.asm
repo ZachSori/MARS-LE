@@ -11,11 +11,16 @@ Loan $t2
 
 Loop:
 if< $t5, $t4, $t3
-bgtz $t5, Exit
+gtgz $t5, Exit
 
 incrament $t3, $t3, 1
-j Loop
+goto Loop
 Exit:
 Payoff
 BalTo $t9
 NL
+
+IR $t1
+Loan $t2
+NL
+

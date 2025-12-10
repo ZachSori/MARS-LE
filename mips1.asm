@@ -1,10 +1,8 @@
-.data
-message: .asciiz "Power level drained by 500!!!\n"
-.text
-pow $t1, 8001
-pow $t2, 4
-kai $t1, $t2
-loop:
-pow $t1, -500
-tp message
-it $t1, loop
+incrament $t1, $t1, 100
+Loan $t1
+
+NL
+
+incrament $t2, $t2, 5000
+Savings $t2
+NL

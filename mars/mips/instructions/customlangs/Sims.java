@@ -57,7 +57,7 @@ public class Sims extends CustomAssembly{
                 new BasicInstruction("incrament $t0,$t1,-65535",
             	 "Assign value to register: set $t0 to ($t1 plus signed 16-bit immediate)",
                 BasicInstructionFormat.I_FORMAT,
-                "111111 sssss fffff tttttttttttttttt",
+                "001000 sssss fffff tttttttttttttttt",
                 new SimulationCode()
                {
                    public void simulate(ProgramStatement statement) throws ProcessingException
@@ -234,7 +234,7 @@ public class Sims extends CustomAssembly{
                }));
 
                instructionList.add(
-                new BasicInstruction("or $t1,$t2,$t3",
+                new BasicInstruction("67 $t1,$t2,$t3",
             	 "Bitwise OR : Set $t1 to bitwise OR of $t2 and $t3",
                 BasicInstructionFormat.R_FORMAT,
                 "000000 sssss ttttt fffff 00000 100101",
@@ -252,7 +252,7 @@ public class Sims extends CustomAssembly{
                }));
 
                instructionList.add(
-                new BasicInstruction("xor $t1,$t2,$t3",
+                new BasicInstruction("exor $t1,$t2,$t3",
             	 "Bitwise XOR (exclusive OR) : Set $t1 to bitwise XOR of $t2 and $t3",
                 BasicInstructionFormat.R_FORMAT,
                 "000000 sssss ttttt fffff 00000 100110",
@@ -289,7 +289,7 @@ public class Sims extends CustomAssembly{
                   }
                }));
                instructionList.add(
-                new BasicInstruction("j target", 
+                new BasicInstruction("goto target", 
             	 "Jump unconditionally : Jump to statement at target address",
             	 BasicInstructionFormat.J_FORMAT,
                 "000010 ffffffffffffffffffffffffff",
@@ -306,7 +306,7 @@ public class Sims extends CustomAssembly{
                   }
                }));
                instructionList.add(
-                new BasicInstruction("bltz $t1,label",
+                new BasicInstruction("gtlz $t1,label",
                 "Branch if less than zero : Branch to statement at label's address if $t1 is less than zero",
             	 BasicInstructionFormat.I_BRANCH_FORMAT,
                 "000001 fffff 00000 ssssssssssssssss",
@@ -324,7 +324,7 @@ public class Sims extends CustomAssembly{
                   }
                }));
                instructionList.add(
-                new BasicInstruction("bgtz $t1,label",
+                new BasicInstruction("gtgz $t1,label",
                 "Branch if greater than zero : Branch to statement at label's address if $t1 is greater than zero",
             	 BasicInstructionFormat.I_BRANCH_FORMAT,
                 "000111 fffff 00000 ssssssssssssssss",
@@ -342,11 +342,12 @@ public class Sims extends CustomAssembly{
                   }
                }));
                //-------------------------------Unique Instructions--------------------------------//
+               //shamt 11111 is used for functions that are unique to this custom language
                instructionList.add(
                 new BasicInstruction("Avg $t1,$t2,$t3",
-            	 "Addition with overflow : set $t1 to ($t2 plus $t3)",
+            	 "Average with overflow : set $t1 to ($t2 plus $t3) / 2",
                 BasicInstructionFormat.R_FORMAT,
-                "000000 sssss ttttt fffff 00000 100000",
+                "000000 sssss ttttt fffff 11111 000001",
                 new SimulationCode()
                {
                    public void simulate(ProgramStatement statement) throws ProcessingException
@@ -372,12 +373,12 @@ public class Sims extends CustomAssembly{
                 new BasicInstruction("Status",
                 "Status Report : Print current financial status to the MARS I/O emulator (Messages pane or stdout)",
             	 BasicInstructionFormat.R_FORMAT,
-                "000000 sssss ttttt fffff 00000 101010",
+                "000000 sssss ttttt fffff 11111 000010",
                 new SimulationCode()
                {
                    public void simulate(ProgramStatement statement) throws ProcessingException
                   {
-                    mars.util.SystemIO.printString(getStats() + "\n");
+                    mars.util.SystemIO.printString(getStats() + "\n\n");
                     // int line = statement.getSourceLine();
                     // pass(line);
 
@@ -387,7 +388,7 @@ public class Sims extends CustomAssembly{
                 new BasicInstruction("Income $t0",
                 "Sets Income : Set income to register value",
             	 BasicInstructionFormat.R_FORMAT,
-                "000000 sssss ttttt fffff 00000 101010",
+                "000000 sssss ttttt fffff 11111 000011",
                 new SimulationCode()
                {
                    public void simulate(ProgramStatement statement) throws ProcessingException
@@ -402,19 +403,13 @@ public class Sims extends CustomAssembly{
                 new BasicInstruction("Loan $t0",
                 "Sets Debt: Set debt to register value, LIR is also applied depending on debt size",
             	 BasicInstructionFormat.R_FORMAT,
-                "000000 sssss ttttt fffff 00000 101010",
+                "000000 sssss ttttt fffff 11111 000100",
                 new SimulationCode()
                {
                    public void simulate(ProgramStatement statement) throws ProcessingException
                   {
                     int [] operands = statement.getOperands();
                     debt += RegisterFile.getValue(operands[0]);
-                    if(debt>0 && lir==0) lir = 5;
-                    else if(debt==0) lir = 0;
-                    else if(debt>1000) lir = 10;
-                    else if(debt>5000) lir = 15;
-                    else if(debt>10000) lir = 25;
-                    else if(debt>50000) lir = 50;
                     int line = statement.getSourceLine();
                     pass(line);
                   }
@@ -423,7 +418,7 @@ public class Sims extends CustomAssembly{
                 new BasicInstruction("IR $t0",
                 "Sets Interest Rate : Set interest rate to register value",
             	 BasicInstructionFormat.R_FORMAT,
-                "000000 sssss ttttt fffff 00000 101010",
+                "000000 sssss ttttt fffff 11111 000101",
                 new SimulationCode()
                {
                    public void simulate(ProgramStatement statement) throws ProcessingException
@@ -436,9 +431,9 @@ public class Sims extends CustomAssembly{
                }));
                instructionList.add(
                 new BasicInstruction("LIR $t0",
-                "Sets Interest Rate : Set loan interest rate to register value",
+                "Sets Loan Interest Rate : Set loan interest rate to register value",
             	 BasicInstructionFormat.R_FORMAT,
-                "000000 sssss ttttt fffff 00000 101010",
+                "000000 sssss ttttt fffff 11111 000110",
                 new SimulationCode()
                {
                    public void simulate(ProgramStatement statement) throws ProcessingException
@@ -453,7 +448,7 @@ public class Sims extends CustomAssembly{
                 new BasicInstruction("Savings $t0",
                 "Increase Balance: Increase balance by register value",
             	 BasicInstructionFormat.R_FORMAT,
-                "000000 sssss ttttt fffff 00000 101010",
+                "000000 sssss ttttt fffff 11111 000111",
                 new SimulationCode()
                {
                    public void simulate(ProgramStatement statement) throws ProcessingException
@@ -468,7 +463,7 @@ public class Sims extends CustomAssembly{
                 new BasicInstruction("NL",
                 "New Life: Resets the progress you have and start from 0 again",
             	 BasicInstructionFormat.R_FORMAT,
-                "000000 sssss ttttt fffff 00000 101010",
+                "000000 sssss ttttt fffff 11111 001000",
                 new SimulationCode()
                {
                    public void simulate(ProgramStatement statement) throws ProcessingException
@@ -476,21 +471,24 @@ public class Sims extends CustomAssembly{
                     mars.util.SystemIO.printString("Your life has been fufilled and you have reached Agartha");
                     mars.util.SystemIO.printString("\nYou lived for " + year + " years.");
                     if(debt==0){
-                        mars.util.SystemIO.printString("\nYou passed debt-free with a net worth of " + balance + ".");
+                        mars.util.SystemIO.printString("\nYou passed, debt-free with a net worth of " + balance + ".");
                     }
                     else if(balance>=debt){
-                        mars.util.SystemIO.printString("\nYou passed a wealthy person with a net worth of " + balance + " and an unpaid debt of " + debt + ".");
-                    } else {
-                        mars.util.SystemIO.printString("\nYou died in poverty with a balance of " + balance + " and a debt of " + debt + ".");
+                        mars.util.SystemIO.printString("\nYou passed, a wealthy person with a net worth of " + balance + " and an unpaid debt of " + debt + ".");
+                    } else if(balance<debt && balance>3) {
+                        mars.util.SystemIO.printString("\nYou passed away with a debt of "+ debt + ", but atleast you can afford a white monster with your " + balance + " doubloons.");
+                    }
+                    else {
+                        mars.util.SystemIO.printString("\nYou poor poor soul can be summed up to " + debt + " doubloons of debt.\n\n");
                     }
                     reset();
                   }
                }));
                instructionList.add(
                 new BasicInstruction("Payoff",
-                "New Life: Resets the progress you have and start from 0 again",
+                "Payoff: Pay off as much debt as possible with current balance",
             	 BasicInstructionFormat.R_FORMAT,
-                "000000 sssss ttttt fffff 00000 101010",
+                "000000 sssss ttttt fffff 11111 001001",
                 new SimulationCode()
                {
                    public void simulate(ProgramStatement statement) throws ProcessingException
@@ -513,9 +511,9 @@ public class Sims extends CustomAssembly{
                
                instructionList.add(
                 new BasicInstruction("BalTo $t0",
-                "Sets the register to a unique value (Balance, Debt, Income, IR, LIR, Year)",
+                "Sets the register to Balance's value",
             	 BasicInstructionFormat.R_FORMAT,
-                "000000 sssss ttttt fffff 00000 101010",
+                "000000 sssss ttttt fffff 11111 001010",
                 new SimulationCode()
                {
                    public void simulate(ProgramStatement statement) throws ProcessingException
@@ -526,15 +524,28 @@ public class Sims extends CustomAssembly{
                }));
                instructionList.add(
                 new BasicInstruction("DebtTo $t0",
-                "Sets the register to a unique value (Balance, Debt, Income, IR, LIR, Year)",
+                "Sets the register to a Debt's value",
             	 BasicInstructionFormat.R_FORMAT,
-                "000000 sssss ttttt fffff 00000 101010",
+                "000000 sssss ttttt fffff 11111 001011",
                 new SimulationCode()
                {
                    public void simulate(ProgramStatement statement) throws ProcessingException
                   {
                     int [] operands = statement.getOperands();
                     RegisterFile.updateRegister(operands[0], debt);
+                  }
+               }));
+               instructionList.add(
+                new BasicInstruction("YearTo $t0",
+                "Sets the register to a Year's value",
+            	 BasicInstructionFormat.R_FORMAT,
+                "000000 sssss ttttt fffff 11111 001100",
+                new SimulationCode()
+               {
+                   public void simulate(ProgramStatement statement) throws ProcessingException
+                  {
+                    int [] operands = statement.getOperands();
+                    RegisterFile.updateRegister(operands[0], year);
                   }
                }));
 
